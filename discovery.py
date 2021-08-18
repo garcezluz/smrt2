@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class InterfaceProblem(Exception):
     pass
 
-def discover_switches(interface=None):
+def discover_switches(interface=None,timeout=None):
     if interface is None:
         interfaces = netifaces.interfaces()
         if "lo" in interfaces:
@@ -41,7 +41,7 @@ def discover_switches(interface=None):
         raise InterfaceProblem("no addr or broadcast for address")
     ip = addr['addr']
 
-    net = Network(ip, mac)
+    net = Network(ip, mac, timeout=timeout)
     logger.debug((interface, ip, mac))
     net.send(Protocol.DISCOVERY, {})
     ret = []
@@ -59,10 +59,11 @@ def main():
     parser.add_argument('--interface', '-i')
     parser.add_argument('--command', '-c', action="store_true")
     parser.add_argument('--loglevel', '-l', type=loglevel, default='INFO')
+    parser.add_argument('--timeout', '-t', type=int, default=10)
     args = parser.parse_args()
     logging.basicConfig(level=args.loglevel)
     try:
-        switches = discover_switches(args.interface)
+        switches = discover_switches(args.interface, args.timeout)
     except InterfaceProblem as e:
         print("Error:", e)
     else:
