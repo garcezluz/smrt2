@@ -48,7 +48,8 @@ def discover_switches(interface=None):
     while True:
         try:
             header, payload = net.receive()
-            ret.append((ip, mac, header, payload))
+            if payload:
+                ret.append((ip, mac, header, payload))
         except ConnectionProblem:
             break
     return ret

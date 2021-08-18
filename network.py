@@ -57,15 +57,17 @@ class Network:
         try:
             data, addr = self.rs.recvfrom(1500)
             data = Protocol.decode(data)
-            logger.debug('Receive Packet: ' + data.hex())
+        except Exception as e:
+            raise ConnectionProblem()
+        try:
             header, payload = Protocol.split(data)
             header, payload = Protocol.interpret_header(header), Protocol.interpret_payload(payload)
             logger.debug('Received Header:  ' + str(header))
             logger.debug('Received Payload: ' + str(payload))
             self.header['token_id'] = header['token_id']
-            return header, payload
         except:
-            raise ConnectionProblem()
+            return None, None
+        return header, payload
 
     def query(self, op_code, payload):
         self.send(op_code, payload)
