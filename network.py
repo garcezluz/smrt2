@@ -16,7 +16,7 @@ class Network:
     UDP_SEND_TO_PORT = 29808
     UDP_RECEIVE_FROM_PORT = 29809
 
-    def __init__(self, ip_address, host_mac, switch_mac="00:00:00:00:00:00"):
+    def __init__(self, ip_address, host_mac, switch_mac="00:00:00:00:00:00", timeout=10):
         self.switch_mac = switch_mac
         self.host_mac = host_mac
         self.ip_address = ip_address
@@ -38,7 +38,7 @@ class Network:
         # Receiving socket
         self.rs = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.rs.bind((Network.BROADCAST_ADDR, Network.UDP_RECEIVE_FROM_PORT))
-        self.rs.settimeout(10)
+        self.rs.settimeout(timeout)
 
     def send(self, op_code, payload):
         self.sequence_id = (self.sequence_id + 1) % 1000
@@ -57,15 +57,17 @@ class Network:
         try:
             data, addr = self.rs.recvfrom(1500)
             data = Protocol.decode(data)
-            logger.debug('Receive Packet: ' + data.hex())
+        except Exception as e:
+            raise ConnectionProblem()
+        try:
             header, payload = Protocol.split(data)
             header, payload = Protocol.interpret_header(header), Protocol.interpret_payload(payload)
             logger.debug('Received Header:  ' + str(header))
             logger.debug('Received Payload: ' + str(payload))
             self.header['token_id'] = header['token_id']
-            return header, payload
         except:
-            raise ConnectionProblem()
+            return None, None
+        return header, payload
 
     def query(self, op_code, payload):
         self.send(op_code, payload)
